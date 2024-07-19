@@ -10,16 +10,23 @@ import (
 func main() {
 	runtime.LockOSThread()
 	var openGL = closedGL.InitClosedGL(800, 600)
-	closedGL.LimitFPS(false)
-	closedGL.PrintlnVec2(SSToCartesianVec)
+	openGL.LimitFPS(false)
+	var tri = newTri([3]glm.Vec2{{400, 100}, {100, 500}, {700, 500}}, &openGL, glm.Vec4{0, 1, 1, 1})
+	//var tri = newTri([3]glm.Vec2{{100, 000}, {500, 700}, {700, 500}}, &openGL, glm.Vec4{0, 1, 1, 1})
+
+	//	tri.startIncenterAnim()
+	tri.calcCircumcenter()
+	tri.startCircumCenterAnim()
+	closedGL.SetWireFrameMode(true)
 	for !openGL.Window.Window.ShouldClose() {
+		tri.process(float32(openGL.FPSCounter.Delta))
 
 		openGL.BeginDrawing()
-		closedGL.ClearBG()
-		openGL.DrawTriangle([3]glm.Vec2{{100, 100}, {50, 250}, {150, 250}}, glm.Vec4{1, 1, 1, 1})
+		openGL.ClearBG()
+		tri.draw()
+		tri.drawCentroid()
 		openGL.DrawFPS(500, 0)
 		openGL.EndDrawing()
 		openGL.Process()
 	}
-	println("test")
 }
