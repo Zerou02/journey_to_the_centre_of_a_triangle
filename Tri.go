@@ -14,7 +14,7 @@ type Tri struct {
 	Ctx       *closedGL.ClosedGLContext
 	Points    [3]glm.Vec2 //cartesian
 	Colour    glm.Vec4
-	CurrState TriState
+	CurrState []TriState
 	centres   [4]glm.Vec2 //centroid,circumcenter,incenter,orthocenter
 }
 
@@ -34,18 +34,18 @@ func (this *Tri) startCircumCenterAnim() {
 	var state = newCircumCenterAnim(this)
 	state.init()
 	state.setCircumcenter(this.calcCircumcenter())
-	this.CurrState = &state
+	this.CurrState = append(this.CurrState, &state)
 }
 func (this *Tri) startCentroidAnim() {
 	var state = newCentroidAnim(this)
 	state.init()
-	this.CurrState = &state
+	this.CurrState = append(this.CurrState, &state)
 }
 
 func (this *Tri) startIncenterAnim() {
 	var state = newIncenterAnim(this)
 	state.init()
-	this.CurrState = &state
+	this.CurrState = append(this.CurrState, &state)
 }
 
 func (this *Tri) startOrthocenterAnim() {
@@ -53,7 +53,7 @@ func (this *Tri) startOrthocenterAnim() {
 	state.init()
 	var ortho = this.calcOrthocenter()
 	state.setOrthocenter(ortho)
-	this.CurrState = &state
+	this.CurrState = append(this.CurrState, &state)
 }
 
 func (this *Tri) draw() {
@@ -63,16 +63,15 @@ func (this *Tri) draw() {
 		ssPoints[i] = SSToCartesianPoint(this.Points[i], this.Ctx.Window.Wh)
 	}
 	this.Ctx.DrawTriangle(ssPoints, this.Colour, 0)
-
-	if this.CurrState != nil {
-		this.CurrState.draw()
+	for i := 0; i < len(this.CurrState); i++ {
+		this.CurrState[i].draw()
 	}
 	drawCartesianCircle(this.calcCircumcenter(), this.Ctx, glm.Vec4{1, 1, 1, 1}, glm.Vec4{1, 1, 1, 1}, 2, 10, 3)
 }
 
 func (this *Tri) process(delta float32) {
-	if this.CurrState != nil {
-		this.CurrState.process(delta)
+	for i := 0; i < len(this.CurrState); i++ {
+		this.CurrState[i].process(delta)
 	}
 }
 

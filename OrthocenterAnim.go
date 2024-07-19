@@ -1,8 +1,6 @@
 package main
 
 import (
-	"math"
-
 	"github.com/EngoEngine/glm"
 	"github.com/Zerou02/closedGL/closedGL"
 )
@@ -21,42 +19,68 @@ func newOrthoSideCenterAnim(corner, p1, p2 glm.Vec2) OrthoCenterSideAnim {
 		oppositeSide: CalcLinearEquation(p1, p2),
 		unitAnim:     closedGL.NewAnimation(0, 1, 1, false, false),
 	}
-	retVal.findR()
+	retVal.findR(p1, p2)
 	return retVal
 }
 
 func (this *OrthoCenterSideAnim) setOrthocenter(orthocenter glm.Vec2) {
-	var a = orthocenter.Sub(&this.corner)
+	/* var a = orthocenter.Sub(&this.corner)
 	if a.Len() > this.vec.Len() {
 		this.vec = a
-	}
+	} */
 }
-func (this *OrthoCenterSideAnim) findR() {
+
+func (this *OrthoCenterSideAnim) findR(p1, p2 glm.Vec2) {
 	var r float32 = 0
-	var steps = 0
-	var timesOverstepped = 0
-	var baseStep float32 = 1
-	for steps < 1000 {
-		steps++
-		var currOffsets = LineCircleIntersection(r, this.oppositeSide, this.corner)
+	var step float32 = 1
+	var targetPoint = glm.Vec2{0, 0}
+
+	if p1[0] == p2[0] {
+		targetPoint = glm.Vec2{p1[0], this.oppositeSide[0]*p1[0] + this.oppositeSide[1]}
+	}
+	var currOffsets = LineCircleIntersection(r, this.oppositeSide, this.corner)
+	for distToLine(p1, p2, targetPoint) > glm.Epsilon {
+		currOffsets = LineCircleIntersection(r, this.oppositeSide, this.corner)
 		var len = len(currOffsets)
 		if len == 2 {
-			timesOverstepped++
-			r -= baseStep
-			var targetPoint = currOffsets[0]
-			var a = targetPoint.Sub(&this.corner)
-			this.vec = a
+			if step > glm.Epsilon {
+				r -= step
+			} else {
+				r -= glm.Epsilon
+			}
+			step *= 0.1
+			targetPoint = currOffsets[0]
+			if step < glm.Epsilon {
+				break
+			}
 		}
 		if len == 0 {
-			r += baseStep / float32((math.Pow(1, float64(timesOverstepped))))
+			if step < glm.Epsilon {
+				r += glm.Epsilon
+			} else {
+				var rNew = step + r
+				if rNew == r {
+					var i float32 = 0
+					for rNew == r {
+						i++
+						rNew = i*step + r
+					}
+					r = rNew
+					break
+				}
+				r = rNew
+			}
 		}
 		if len == 1 {
-			var targetPoint = currOffsets[0]
-			var a = targetPoint.Sub(&this.corner)
-			this.vec = a
-			steps = 1000
+			targetPoint = currOffsets[0]
+			break
 		}
 	}
+	if len(currOffsets) == 2 {
+		targetPoint = closedGL.MiddlePoint(currOffsets[0], currOffsets[1])
+	}
+	var a = targetPoint.Sub(&this.corner)
+	this.vec = a
 	this.rAnim = closedGL.NewAnimation(0, r, 1, false, false)
 }
 
@@ -85,8 +109,9 @@ type OrthocenterAnim struct {
 
 func newOrthoCenterAnim(tri *Tri) OrthocenterAnim {
 	return OrthocenterAnim{
-		tri:   tri,
-		anims: [3]OrthoCenterSideAnim{},
+		tri:       tri,
+		anims:     [3]OrthoCenterSideAnim{},
+		currState: 0,
 	}
 }
 
@@ -103,6 +128,7 @@ func (this *OrthocenterAnim) init() {
 }
 
 func (this *OrthocenterAnim) draw() {
+
 	for i := 0; i < 3; i++ {
 		if this.currState >= i {
 			this.anims[i].draw(this.tri.Ctx, i+3)
@@ -110,8 +136,8 @@ func (this *OrthocenterAnim) draw() {
 	}
 	if this.currState == 3 {
 		this.tri.drawOrthocenter()
-
 	}
+
 }
 
 func (this *OrthocenterAnim) process(delta float32) {

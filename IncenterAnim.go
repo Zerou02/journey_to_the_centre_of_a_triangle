@@ -80,6 +80,7 @@ type IncenterAnim struct {
 	centroid    glm.Vec2
 	cornerAnims [3]IncenterCornerAnim
 	currState   int
+	unitAnim    closedGL.Animation
 }
 
 func newIncenterAnim(tri *Tri) IncenterAnim {
@@ -88,29 +89,41 @@ func newIncenterAnim(tri *Tri) IncenterAnim {
 
 func (this *IncenterAnim) process(delta float32) {
 	for i, x := range this.cornerAnims {
+		this.cornerAnims[i].process(delta, this.currState, i)
 		if x.animX.IsFinished() {
 			this.currState = i + 1
 		}
 	}
-	this.cornerAnims[0].process(delta, 0, this.currState)
-	this.cornerAnims[1].process(delta, 1, this.currState)
-	this.cornerAnims[2].process(delta, 2, this.currState)
+	if this.currState == 3 {
+		this.unitAnim.Process(delta)
+	}
 }
 func (this *IncenterAnim) init() {
 	this.centroid = this.tri.calcCentroid()
 	this.cornerAnims[0] = newCornerAnim(this.tri.Points[0], this.tri.Points[1], this.tri.Points[2], this.centroid)
 	this.cornerAnims[1] = newCornerAnim(this.tri.Points[1], this.tri.Points[0], this.tri.Points[2], this.centroid)
 	this.cornerAnims[2] = newCornerAnim(this.tri.Points[2], this.tri.Points[0], this.tri.Points[1], this.centroid)
+	this.unitAnim = closedGL.NewAnimation(0, 1, 1, false, false)
 }
 func (this *IncenterAnim) draw() {
 
 	for i := 0; i < len(this.cornerAnims); i++ {
 		if this.currState >= i {
 			this.cornerAnims[i].draw(this.tri.Ctx, i+3)
-
 		}
 	}
 	if this.currState == 3 {
-		drawCartesianCircle(this.tri.calcIncenter(), this.tri.Ctx, glm.Vec4{0, 1, 0, 1}, glm.Vec4{1, 1, 0, 1}, 6, 10, 4)
+		var incenter = this.tri.calcIncenter()
+
+		var eq1 = CalcLinearEquation(this.cornerAnims[0].cornerP, this.cornerAnims[0].dirP)
+		var eq2 = CalcLinearEquation(this.cornerAnims[1].cornerP, this.cornerAnims[2].cornerP)
+		var cp = CalcCrossingPoint(eq1, eq2)
+		var vec = cp.Sub(&incenter)
+		var b = incenter
+		b.AddScaledVec(this.unitAnim.GetValue(), &vec)
+		var dist = distBetweenPoints(incenter, b)
+		drawCartesianCircle(incenter, this.tri.Ctx, glm.Vec4{0, 1, 0, 1}, glm.Vec4{1, 1, 0, 1}, 6, 10, 4)
+		drawCartesianCircle(incenter, this.tri.Ctx, glm.Vec4{0, 1, 0, 0}, glm.Vec4{1, 1, 0, 1}, 7, dist, 4)
+
 	}
 }
