@@ -71,3 +71,41 @@ func distToLine(lineP1, lineP2, p glm.Vec2) float32 {
 	var denom = distBetweenPoints(lineP1, lineP2)
 	return num / denom
 }
+
+// ax+by+c = 0
+func ConvertToStandardForm(eq glm.Vec2) glm.Vec3 {
+	return glm.Vec3{-eq[0], 1, -eq[1]}
+}
+
+// https://cp-algorithms.com/geometry/circle-line-intersection.html
+func LineCircleIntersection(r float32, eq glm.Vec2, circlePos glm.Vec2) []glm.Vec2 {
+	var retArr []glm.Vec2 = []glm.Vec2{}
+
+	//translation
+	var normEq = glm.Vec2{eq[0], eq[1] + circlePos[0]*eq[0] - circlePos[1]}
+	var stdForm = ConvertToStandardForm(normEq)
+	var a = stdForm[0]
+	var b = stdForm[1]
+	var c = stdForm[2]
+	var x0 = -a * c / (a*a + b*b)
+	var y0 = -b * c / (a*a + b*b)
+	if c*c > r*r*(a*a+b*b)+glm.Epsilon {
+		//do nothing
+	} else if math.Abs(c*c-r*r*(a*a+b*b)) < glm.Epsilon {
+		retArr = append(retArr, glm.Vec2{x0, y0})
+	} else {
+		var d = r*r - c*c/(a*a+b*b)
+		var mult = math.Sqrt(d / (a*a + b*b))
+		var ax = x0 + b*mult
+		var bx = x0 - b*mult
+		var ay = y0 - a*mult
+		var by = y0 + a*mult
+		retArr = append(retArr, glm.Vec2{ax, ay})
+		retArr = append(retArr, glm.Vec2{bx, by})
+	}
+
+	for i := 0; i < len(retArr); i++ {
+		retArr[i] = retArr[i].Add(&circlePos)
+	}
+	return retArr
+}

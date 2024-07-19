@@ -15,6 +15,7 @@ type Tri struct {
 	Points    [3]glm.Vec2 //cartesian
 	Colour    glm.Vec4
 	CurrState TriState
+	centres   [4]glm.Vec2 //centroid,circumcenter,incenter,orthocenter
 }
 
 func newTri(ssPoints [3]glm.Vec2, ctx *closedGL.ClosedGLContext, colour glm.Vec4) Tri {
@@ -22,6 +23,10 @@ func newTri(ssPoints [3]glm.Vec2, ctx *closedGL.ClosedGLContext, colour glm.Vec4
 	for i := 0; i < len(ssPoints); i++ {
 		retTri.Points[i] = SSToCartesianPoint(ssPoints[i], ctx.Window.Wh)
 	}
+	retTri.centres[0] = retTri.calcCentroid()
+	retTri.centres[1] = retTri.calcCircumcenter()
+	retTri.centres[2] = retTri.calcIncenter()
+	retTri.centres[3] = retTri.calcOrthocenter()
 	return retTri
 }
 
@@ -40,6 +45,14 @@ func (this *Tri) startCentroidAnim() {
 func (this *Tri) startIncenterAnim() {
 	var state = newIncenterAnim(this)
 	state.init()
+	this.CurrState = &state
+}
+
+func (this *Tri) startOrthocenterAnim() {
+	var state = newOrthoCenterAnim(this)
+	state.init()
+	var ortho = this.calcOrthocenter()
+	state.setOrthocenter(ortho)
 	this.CurrState = &state
 }
 
@@ -96,13 +109,33 @@ func (this *Tri) calcCircumcenter() glm.Vec2 {
 	return CalcCrossingPoint(test, test2)
 }
 
-func (this *Tri) drawCentroid() {
+func (this *Tri) calcOrthocenter() glm.Vec2 {
+	var anim = newOrthoCenterAnim(this)
+	anim.init()
+	var other1 = anim.anims[0].corner
+	other1.AddScaledVec(1, &anim.anims[0].vec)
+	var eq1 = CalcLinearEquation(anim.anims[0].corner, other1)
 
-	this.Ctx.DrawCircle(CartesianToSSPoint(this.calcCentroid(), this.Ctx.Window.Wh), glm.Vec4{1, 0, 0, 1}, glm.Vec4{1, 1, 0, 1}, 10, 3, 1)
+	var other2 = anim.anims[1].corner
+	other2.AddScaledVec(1, &anim.anims[1].vec)
+	var eq2 = CalcLinearEquation(anim.anims[1].corner, other2)
+	return CalcCrossingPoint(eq1, eq2)
 }
 
-func startCentroidAnim() {
+func (this *Tri) drawCentroid() {
+	this.Ctx.DrawCircle(CartesianToSSPoint(this.centres[0], this.Ctx.Window.Wh), glm.Vec4{1, 0, 0, 1}, glm.Vec4{1, 1, 0, 1}, 10, 3, 1)
+}
 
+func (this *Tri) drawCircumCenter() {
+	this.Ctx.DrawCircle(CartesianToSSPoint(this.centres[1], this.Ctx.Window.Wh), glm.Vec4{1, 1, 1, 1}, glm.Vec4{1, 1, 0, 1}, 10, 3, 2)
+}
+
+func (this *Tri) drawIncenter() {
+	this.Ctx.DrawCircle(CartesianToSSPoint(this.centres[2], this.Ctx.Window.Wh), glm.Vec4{0, 1, 0, 1}, glm.Vec4{1, 1, 0, 1}, 10, 3, 6)
+}
+
+func (this *Tri) drawOrthocenter() {
+	this.Ctx.DrawCircle(CartesianToSSPoint(this.centres[3], this.Ctx.Window.Wh), glm.Vec4{0, 0.5, 0.5, 1}, glm.Vec4{1, 1, 0, 1}, 10, 3, 6)
 }
 
 func (this *Tri) drawCentroidLines() {
