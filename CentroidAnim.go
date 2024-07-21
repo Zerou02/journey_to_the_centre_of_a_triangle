@@ -14,13 +14,14 @@ type AnimSideCentroid struct {
 func newAnimSideCentroid(cornerP, p1, p2 glm.Vec2, ctx *closedGL.ClosedGLContext, animDur float32) AnimSideCentroid {
 	var mp = CalcMiddlePoint(p1, p2)
 	var distVec = mp.Sub(&p1)
+	var factor float32 = 1.1
 	return AnimSideCentroid{
 		corner:      cornerP,
 		p1:          p1,
 		p2:          p2,
 		mp:          mp,
-		radiusAnim:  closedGL.NewAnimation(0, distVec.Len()*1.1, animDur, false, false),
-		movToMpAnim: closedGL.NewAnimation(0, 1, (animDur / (distVec.Len() * 1.1) * distVec.Len()), false, false),
+		radiusAnim:  closedGL.NewAnimation(0, distVec.Len()*factor, animDur, false, false),
+		movToMpAnim: closedGL.NewAnimation(0, 1, (animDur / (distVec.Len() * factor) * distVec.Len()), false, false),
 		ctx:         ctx,
 	}
 }
