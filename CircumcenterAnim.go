@@ -78,6 +78,7 @@ func newCircumCenterAnim(tri *Tri, animDur float32) CircumcenterAnim {
 		animDur:    animDur,
 		animCenter: closedGL.NewAnimation(0, vec.Len(), animDur, false, false),
 		machine:    machine,
+		endTimer:   closedGL.NewTimer(0.5, false),
 	}
 }
 
