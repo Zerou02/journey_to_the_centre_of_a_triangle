@@ -40,7 +40,7 @@ func newAnimSideCentroid(p1, p2 glm.Vec2, freePoint glm.Vec2, allowedState int, 
 	}
 }
 
-func (this *AnimSideCentroid) process(delta float32) {
+func (this *AnimSideCentroid) Process(delta float32) {
 	if *this.currState < this.allowedState {
 		return
 	}
@@ -63,7 +63,7 @@ func (this *AnimSideCentroid) process(delta float32) {
 
 }
 
-func (this *AnimSideCentroid) draw(ctx *closedGL.ClosedGLContext) {
+func (this *AnimSideCentroid) Draw(ctx *closedGL.ClosedGLContext) {
 	var wh = ctx.Window.Wh
 	var cc = glm.Vec4{1, 0, 0, 1}
 	var c = glm.Vec4{1, 0, 0, 1}
@@ -127,10 +127,10 @@ func (this *CentroidAnim) init() {
 	this.sides[2] = newAnimSideCentroid(this.tri.Points[1], this.tri.Points[2], this.tri.Points[0], 2, &this.currState)
 }
 
-func (this *CentroidAnim) draw() {
-	this.sides[0].draw(this.tri.Ctx)
-	this.sides[1].draw(this.tri.Ctx)
-	this.sides[2].draw(this.tri.Ctx)
+func (this *CentroidAnim) Draw() {
+	this.sides[0].Draw(this.tri.Ctx)
+	this.sides[1].Draw(this.tri.Ctx)
+	this.sides[2].Draw(this.tri.Ctx)
 	if this.currState == 3 || this.currState == 6 {
 		var lastMp = closedGL.MiddlePoint(this.tri.Points[1], this.tri.Points[2])
 		this.tri.drawCentroid()
@@ -138,12 +138,12 @@ func (this *CentroidAnim) draw() {
 	}
 }
 
-func (this *CentroidAnim) process(delta float32) {
-	this.sides[0].process(delta)
-	this.sides[1].process(delta)
-	this.sides[2].process(delta)
+func (this *CentroidAnim) Process(delta float32) {
+	this.sides[0].Process(delta)
+	this.sides[1].Process(delta)
+	this.sides[2].Process(delta)
 }
 
-func (this *CentroidAnim) isFinished() bool {
+func (this *CentroidAnim) IsFinished() bool {
 	return this.currState == 3
 }

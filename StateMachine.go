@@ -39,6 +39,12 @@ func (this *StateMachine) draw() {
 	currState.Draw()
 }
 
+func (this *StateMachine) drawAll() {
+	for i := 0; i < len(this.states); i++ {
+		this.states[i].Draw()
+	}
+}
+
 func (this *StateMachine) isFinished() bool {
 	return this.currState >= len(this.states)
 }

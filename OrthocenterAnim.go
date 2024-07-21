@@ -83,7 +83,7 @@ func (this *OrthocenterAnim) init() {
 	this.anims[2] = newOrthoSideCenterAnim(this.tri.Points[2], this.tri.Points[0], this.tri.Points[1])
 }
 
-func (this *OrthocenterAnim) draw() {
+func (this *OrthocenterAnim) Draw() {
 
 	for i := 0; i < 3; i++ {
 		if this.currState >= i {
@@ -96,7 +96,7 @@ func (this *OrthocenterAnim) draw() {
 
 }
 
-func (this *OrthocenterAnim) process(delta float32) {
+func (this *OrthocenterAnim) Process(delta float32) {
 	for i := 0; i < 3; i++ {
 		if this.currState >= i {
 			this.anims[i].process(delta)
@@ -107,6 +107,6 @@ func (this *OrthocenterAnim) process(delta float32) {
 	}
 }
 
-func (this *OrthocenterAnim) isFinished() bool {
+func (this *OrthocenterAnim) IsFinished() bool {
 	return this.currState == 3
 }

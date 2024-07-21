@@ -7,10 +7,10 @@ import (
 )
 
 type TriState interface {
-	process(delta float32)
+	Process(delta float32)
 	init()
-	draw()
-	isFinished() bool
+	Draw()
+	IsFinished() bool
 }
 type Tri struct {
 	Ctx       *closedGL.ClosedGLContext
@@ -58,7 +58,7 @@ func (this *Tri) calcCentres() {
 func (this *Tri) IsFinished() bool {
 	var oneFinished = true
 	for _, x := range this.currAnims {
-		if x != nil && !x.isFinished() {
+		if x != nil && !x.IsFinished() {
 			oneFinished = false
 			break
 		}
@@ -67,9 +67,7 @@ func (this *Tri) IsFinished() bool {
 }
 
 func (this *Tri) startCircumCenterAnim() {
-	var state = newCircumCenterAnim(this)
-	state.init()
-	state.setCircumcenter(this.calcCircumcenter())
+	var state = newCircumCenterAnim(this, 1)
 	this.currAnims[1] = &state
 }
 func (this *Tri) startCentroidAnim() {
@@ -114,7 +112,7 @@ func (this *Tri) Draw() {
 
 	for i := 0; i < len(this.currAnims); i++ {
 		if this.currAnims[i] != nil {
-			this.currAnims[i].draw()
+			this.currAnims[i].Draw()
 		}
 	}
 
@@ -144,7 +142,7 @@ func (this *Tri) Process(delta float32) {
 
 	for i := 0; i < len(this.currAnims); i++ {
 		if this.currAnims[i] != nil {
-			this.currAnims[i].process(delta)
+			this.currAnims[i].Process(delta)
 		}
 	}
 
@@ -168,19 +166,9 @@ func (this *Tri) calcIncenter() glm.Vec2 {
 }
 
 func (this *Tri) calcCircumcenter() glm.Vec2 {
-	var anim = newCircumCenterAnim(this)
-	anim.init()
-
-	var p2 = anim.anims[0].basePoint
-	p2.AddScaledVec(50, &anim.anims[0].vec)
-
-	var p3 = anim.anims[1].basePoint
-	p3.AddScaledVec(50, &anim.anims[1].vec)
-
-	var test = CalcLinearEquation(anim.anims[0].basePoint, p2)
-	var test2 = CalcLinearEquation(anim.anims[1].basePoint, p3)
-
-	return CalcCrossingPoint(test, test2)
+	var line1 = CalcPerpLineVec(this.Points[0], this.Points[1])
+	var line2 = CalcPerpLineVec(this.Points[1], this.Points[2])
+	return CalcCrossingPoint(line1, line2)
 }
 
 func (this *Tri) calcOrthocenter() glm.Vec2 {

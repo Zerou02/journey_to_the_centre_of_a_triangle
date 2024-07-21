@@ -67,18 +67,18 @@ func main() {
 	for !openGL.Window.Window.ShouldClose() {
 
 		var delta = float32(openGL.FPSCounter.Delta)
+		_ = delta
 		tri.Process(delta)
-		if tri.IsFinished() {
+		tri.showUi = true
+		/* if tri.IsFinished() {
 			currIdx++
 			if currIdx >= len(vertices) {
-				tri.currAnims = [4]TriState{}
-				tri.showUi = true
 			} else {
 
 				tri.setVertices(vertices[currIdx])
 				cbs[currIdx]()
 			}
-		}
+		} */
 		openGL.BeginDrawing()
 		openGL.ClearBG(rgbToColour(0, 0, 0))
 

@@ -87,7 +87,7 @@ func newIncenterAnim(tri *Tri) IncenterAnim {
 	return IncenterAnim{tri: tri, currState: 0}
 }
 
-func (this *IncenterAnim) process(delta float32) {
+func (this *IncenterAnim) Process(delta float32) {
 	for i, x := range this.cornerAnims {
 		this.cornerAnims[i].process(delta, this.currState, i)
 		if x.animX.IsFinished() {
@@ -105,7 +105,7 @@ func (this *IncenterAnim) init() {
 	this.cornerAnims[2] = newCornerAnim(this.tri.Points[2], this.tri.Points[0], this.tri.Points[1], this.centroid)
 	this.unitAnim = closedGL.NewAnimation(0, 1, 1, false, false)
 }
-func (this *IncenterAnim) draw() {
+func (this *IncenterAnim) Draw() {
 
 	for i := 0; i < len(this.cornerAnims); i++ {
 		if this.currState >= i {
@@ -122,6 +122,6 @@ func (this *IncenterAnim) draw() {
 	}
 }
 
-func (this *IncenterAnim) isFinished() bool {
+func (this *IncenterAnim) IsFinished() bool {
 	return this.unitAnim.IsFinished()
 }

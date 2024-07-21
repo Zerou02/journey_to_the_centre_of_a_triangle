@@ -6,6 +6,9 @@ import (
 	"github.com/Zerou02/closedGL/closedGL"
 )
 
+// mx+n
+type LinearEq = glm.Vec2
+
 func SSToCartesianPoint(vec glm.Vec2, wh float32) glm.Vec2 {
 	return glm.Vec2{vec[0], wh - vec[1]}
 }
@@ -159,4 +162,19 @@ func findLineCircleIntersectionPoint(cp, p1, p2 glm.Vec2) glm.Vec2 {
 		targetPoint = closedGL.MiddlePoint(currOffsets[0], currOffsets[1])
 	}
 	return targetPoint
+}
+
+func CalcPerpLineVec(p1, p2 glm.Vec2) LinearEq {
+	var mp = CalcMiddlePoint(p1, p2)
+	var dir = p2.Sub(&p1)
+	var perp = dir.Perp()
+	var other = mp.Add(&perp)
+	return CalcLinearEquation(mp, other)
+}
+
+func LerpVec2(a, b glm.Vec2, t float32) glm.Vec2 {
+	return glm.Vec2{
+		closedGL.Lerp(a[0], b[0], t),
+		closedGL.Lerp(a[1], b[1], t),
+	}
 }

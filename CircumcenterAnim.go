@@ -6,121 +6,103 @@ import (
 )
 
 type CircumcenterSideAnim struct {
-	basePoint, vec glm.Vec2
-	circumcenter   glm.Vec2
-	p1, p2         glm.Vec2
-	animR          closedGL.Animation
-	targetR        float32
-	animUnit       closedGL.Animation
+	basePoint    glm.Vec2
+	circumcenter glm.Vec2
+	p1, p2       glm.Vec2
+	animR        closedGL.Animation
+	animDur      float32
+	animLine     closedGL.Animation
+	ctx          *closedGL.ClosedGLContext
 }
 
-func newCircumCenterSideAnim(p1, p2 glm.Vec2) CircumcenterSideAnim {
-	var vec = p2.Sub(&p1)
-	var perp = vec.Perp()
-	perp = perp.Normalized()
+func newCircumCenterSideAnim(p1, p2 glm.Vec2, tri *Tri, animDur float32) CircumcenterSideAnim {
 	var mp = closedGL.MiddlePoint(p1, p2)
 
+	var dirVec = mp.Sub(&p1)
+	var targetR = dirVec.Len()
+	_ = targetR
+	var circumcenter = tri.calcCircumcenter()
 	return CircumcenterSideAnim{
-		basePoint: mp,
-		vec:       perp,
-		p1:        p1,
-		p2:        p2,
+		basePoint:    mp,
+		p1:           p1,
+		p2:           p2,
+		ctx:          tri.Ctx,
+		circumcenter: circumcenter,
+		animDur:      animDur,
+		animR:        closedGL.NewAnimation(0, targetR, animDur, false, false),
+		animLine:     closedGL.NewAnimation(0, 1.1, animDur, false, false),
 	}
 }
 
-func (this *CircumcenterSideAnim) setCircumcenter(circumcenter glm.Vec2) {
-	var mp = closedGL.MiddlePoint(this.p1, this.p2)
-
-	var diff = mp.Sub(&this.p1)
-	this.circumcenter = circumcenter
-
-	this.animUnit = closedGL.NewAnimation(0, 1.1, 1, false, false)
-	this.targetR = diff.Len()
-	this.animR = closedGL.NewAnimation(0, this.targetR*1, 3, false, false)
-
-}
-
-func (this *CircumcenterSideAnim) process(delta float32) {
+func (this *CircumcenterSideAnim) Process(delta float32) {
 	this.animR.Process(delta)
-	if this.animR.GetValue() >= this.targetR {
-		this.animUnit.Process(delta)
+	if this.animR.IsFinished() {
+		this.animLine.Process(delta)
 	}
 }
 
-func (this *CircumcenterSideAnim) draw(ctx *closedGL.ClosedGLContext) {
-	var bc = glm.Vec4{1, 1, 0, 1}
-	if !this.animR.IsFinished() {
-		drawCartesianCircle(this.p1, ctx, glm.Vec4{0, 0, 0, 0}, bc, 3, this.animR.GetValue(), 2)
-		drawCartesianCircle(this.p2, ctx, glm.Vec4{0, 0, 0, 0}, bc, 3, this.animR.GetValue(), 2)
-	}
-	var vec2 = this.circumcenter.Sub(&this.basePoint)
-	var pForward = this.basePoint
-	pForward.AddScaledVec(this.animUnit.GetValue(), &vec2)
-	var pBack = this.basePoint
-	pBack.AddScaledVec(-this.animUnit.GetValue(), &vec2)
-	drawCartesianLine(this.basePoint, pForward, ctx, 2, glm.Vec4{1, 1, 0, 1})
-	drawCartesianLine(this.basePoint, pBack, ctx, 2, glm.Vec4{1, 1, 0, 1})
+func (this *CircumcenterSideAnim) Draw() {
+	var borderC = glm.Vec4{1, 1, 0, 1}
 
+	if !this.animR.IsFinished() {
+		drawCartesianCircle(this.p1, this.ctx, glm.Vec4{1, 0, 0, 0}, borderC, 3, this.animR.GetValue(), 3)
+		drawCartesianCircle(this.p2, this.ctx, glm.Vec4{1, 0, 0, 0}, borderC, 3, this.animR.GetValue(), 3)
+	}
+	drawCartesianLine(this.basePoint, LerpVec2(this.basePoint, this.circumcenter, this.animLine.GetValue()), this.ctx, 2, glm.Vec4{1, 1, 0, 1})
+	drawCartesianLine(this.basePoint, LerpVec2(this.basePoint, this.circumcenter, -this.animLine.GetValue()), this.ctx, 2, glm.Vec4{1, 1, 0, 1})
+}
+
+func (this *CircumcenterSideAnim) IsFinished() bool {
+	return this.animLine.IsFinished()
 }
 
 type CircumcenterAnim struct {
-	tri          *Tri
-	anims        [3]CircumcenterSideAnim
-	circumcenter glm.Vec2
-	currState    int
-	animCenter   closedGL.Animation
+	tri        *Tri
+	machine    StateMachine
+	animCenter closedGL.Animation
+	animDur    float32
+	endTimer   closedGL.Timer
 }
 
-func newCircumCenterAnim(tri *Tri) CircumcenterAnim {
-	return CircumcenterAnim{
-		tri:   tri,
-		anims: [3]CircumcenterSideAnim{},
-	}
+func newCircumCenterAnim(tri *Tri, animDur float32) CircumcenterAnim {
+	var c = tri.calcCircumcenter()
+	var vec = c.Sub(&tri.Points[0])
+	var test = newCircumCenterSideAnim(tri.Points[0], tri.Points[1], tri, animDur)
+	var test2 = newCircumCenterSideAnim(tri.Points[0], tri.Points[2], tri, animDur)
+	var test3 = newCircumCenterSideAnim(tri.Points[1], tri.Points[2], tri, animDur)
+	var machine = newStateMachine()
+	machine.addState(&test).addState(&test2).addState(&test3)
 
+	return CircumcenterAnim{
+		tri:        tri,
+		animDur:    animDur,
+		animCenter: closedGL.NewAnimation(0, vec.Len(), animDur, false, false),
+		machine:    machine,
+	}
+}
+
+func (this *CircumcenterAnim) Draw() {
+	this.machine.drawAll()
+	if this.machine.isFinished() {
+		this.tri.drawCircumCenter()
+		drawCartesianCircle(this.tri.calcCircumcenter(), this.tri.Ctx, glm.Vec4{1, 1, 0, 0}, glm.Vec4{1, 1, 0, 1}, 3, this.animCenter.GetValue(), 3)
+	}
+}
+
+func (this *CircumcenterAnim) Process(delta float32) {
+	this.machine.process(delta)
+	if this.machine.isFinished() {
+		this.animCenter.Process(delta)
+	}
+	if this.animCenter.IsFinished() {
+		this.endTimer.Process(delta)
+	}
+}
+
+func (this *CircumcenterAnim) IsFinished() bool {
+	return this.endTimer.IsTick()
 }
 
 func (this *CircumcenterAnim) init() {
-	this.anims[0] = newCircumCenterSideAnim(this.tri.Points[0], this.tri.Points[1])
-	this.anims[1] = newCircumCenterSideAnim(this.tri.Points[0], this.tri.Points[2])
-	this.anims[2] = newCircumCenterSideAnim(this.tri.Points[1], this.tri.Points[2])
 
-}
-
-func (this *CircumcenterAnim) setCircumcenter(circumCenter glm.Vec2) {
-	this.anims[0].setCircumcenter(circumCenter)
-	this.anims[1].setCircumcenter(circumCenter)
-	this.anims[2].setCircumcenter(circumCenter)
-
-	var vec = circumCenter.Sub(&this.tri.Points[0])
-	this.animCenter = closedGL.NewAnimation(0, vec.Len(), 1, false, false)
-}
-
-func (this *CircumcenterAnim) draw() {
-	for i := 0; i < 3; i++ {
-		if this.currState >= i {
-			this.anims[i].draw(this.tri.Ctx)
-			if this.anims[i].animUnit.IsFinished() {
-				this.currState = i + 1
-			}
-		}
-	}
-	if this.currState == 3 {
-		this.tri.drawCircumCenter()
-		drawCartesianCircle(this.tri.calcCircumcenter(), this.tri.Ctx, glm.Vec4{1, 0, 0, 0}, glm.Vec4{1, 1, 0, 1}, 3, this.animCenter.GetValue(), 3)
-	}
-}
-
-func (this *CircumcenterAnim) process(delta float32) {
-	for i := 0; i < 3; i++ {
-		if this.currState >= i {
-			this.anims[i].process(delta)
-		}
-	}
-	if this.currState == 3 {
-		this.animCenter.Process(delta)
-	}
-}
-
-func (this *CircumcenterAnim) isFinished() bool {
-	return this.animCenter.IsFinished()
 }

@@ -24,6 +24,10 @@ github.com/Zerou02/closedGL v0.1.12 h1:8vT3zxMW1GoRCBlkZoyONzRuOIU1vjdo6eoG002sc
 github.com/Zerou02/closedGL v0.1.12/go.mod h1:VFSoi3gEPhU865PEAPfvQT8nsX1eusZNC8hH4YCTnLU=
 github.com/Zerou02/closedGL v0.1.13 h1:wjziZCUxwvSsXEBpoeQAL2AtvlP8gl65r3g21aoZtDs=
 github.com/Zerou02/closedGL v0.1.13/go.mod h1:VFSoi3gEPhU865PEAPfvQT8nsX1eusZNC8hH4YCTnLU=
+github.com/Zerou02/closedGL v0.1.14 h1:gzQtO2FLsEHE36zIs9ihFD6sgv5EiGHnRVQym2ugtsA=
+github.com/Zerou02/closedGL v0.1.14/go.mod h1:VFSoi3gEPhU865PEAPfvQT8nsX1eusZNC8hH4YCTnLU=
+github.com/Zerou02/closedGL v0.1.15 h1:Jzvg81oCM//mDPwilQV23TYOkntS5mmBjyf3eLqTojI=
+github.com/Zerou02/closedGL v0.1.15/go.mod h1:VFSoi3gEPhU865PEAPfvQT8nsX1eusZNC8hH4YCTnLU=
 github.com/Zerou02/closedGL v0.2.0 h1:yPba90Z9SsUCZs7yNF3lTXom0k3q5y3cAIaOhFizqCk=
 github.com/Zerou02/closedGL v0.2.0/go.mod h1:YQJe3y09Im/GiFljOBVCOr12j5k2gvRayLPImWSuwOk=
 github.com/Zerou02/closedGL v0.3.0 h1:t3E3GHwleIIV98SiqsnM+5eSbmQKRDw+Rf2gfXXZ4jo=
