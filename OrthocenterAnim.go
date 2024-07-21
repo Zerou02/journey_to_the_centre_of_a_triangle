@@ -19,69 +19,19 @@ func newOrthoSideCenterAnim(corner, p1, p2 glm.Vec2) OrthoCenterSideAnim {
 		oppositeSide: CalcLinearEquation(p1, p2),
 		unitAnim:     closedGL.NewAnimation(0, 1, 1, false, false),
 	}
-	retVal.findR(p1, p2)
+	var p = findLineCircleIntersectionPoint(corner, p1, p2)
+	var a = p.Sub(&corner)
+	retVal.vec = a
+	retVal.rAnim = closedGL.NewAnimation(0, retVal.vec.Len(), 1, false, false)
 	return retVal
 }
 
 func (this *OrthoCenterSideAnim) setOrthocenter(orthocenter glm.Vec2) {
-	/* var a = orthocenter.Sub(&this.corner)
-	if a.Len() > this.vec.Len() {
-		this.vec = a
-	} */
-}
+	var newVec = orthocenter.Sub(&this.corner)
+	if newVec.Len() > this.vec.Len() {
 
-func (this *OrthoCenterSideAnim) findR(p1, p2 glm.Vec2) {
-	var r float32 = 0
-	var step float32 = 1
-	var targetPoint = glm.Vec2{0, 0}
-
-	if p1[0] == p2[0] {
-		targetPoint = glm.Vec2{p1[0], this.oppositeSide[0]*p1[0] + this.oppositeSide[1]}
+		this.vec = orthocenter.Sub(&this.corner)
 	}
-	var currOffsets = LineCircleIntersection(r, this.oppositeSide, this.corner)
-	for distToLine(p1, p2, targetPoint) > glm.Epsilon {
-		currOffsets = LineCircleIntersection(r, this.oppositeSide, this.corner)
-		var len = len(currOffsets)
-		if len == 2 {
-			if step > glm.Epsilon {
-				r -= step
-			} else {
-				r -= glm.Epsilon
-			}
-			step *= 0.1
-			targetPoint = currOffsets[0]
-			if step < glm.Epsilon {
-				break
-			}
-		}
-		if len == 0 {
-			if step < glm.Epsilon {
-				r += glm.Epsilon
-			} else {
-				var rNew = step + r
-				if rNew == r {
-					var i float32 = 0
-					for rNew == r {
-						i++
-						rNew = i*step + r
-					}
-					r = rNew
-					break
-				}
-				r = rNew
-			}
-		}
-		if len == 1 {
-			targetPoint = currOffsets[0]
-			break
-		}
-	}
-	if len(currOffsets) == 2 {
-		targetPoint = closedGL.MiddlePoint(currOffsets[0], currOffsets[1])
-	}
-	var a = targetPoint.Sub(&this.corner)
-	this.vec = a
-	this.rAnim = closedGL.NewAnimation(0, r, 1, false, false)
 }
 
 func (this *OrthoCenterSideAnim) process(delta float32) {
@@ -94,11 +44,17 @@ func (this *OrthoCenterSideAnim) process(delta float32) {
 
 func (this *OrthoCenterSideAnim) draw(ctx *closedGL.ClosedGLContext, depth int) {
 	if !this.rAnim.IsFinished() {
-		drawCartesianCircle(this.corner, ctx, glm.Vec4{1, 0, 0, 0}, glm.Vec4{1, 0, 0, 1}, 3, this.rAnim.GetValue(), float32(depth))
+		drawCartesianCircle(this.corner, ctx, glm.Vec4{0, 0, 0, 0}, rgbToColour(54, 194, 206), 3, this.rAnim.GetValue(), float32(depth))
 	}
 	var p = this.corner
+	var p2 = this.corner
+
 	p.AddScaledVec(this.unitAnim.GetValue(), &this.vec)
-	drawCartesianLine(this.corner, p, ctx, int(depth))
+	p2.AddScaledVec(-this.unitAnim.GetValue(), &this.vec)
+
+	drawCartesianLine(this.corner, p, ctx, int(depth), rgbToColour(54, 194, 206))
+	drawCartesianLine(this.corner, p2, ctx, int(depth), rgbToColour(54, 194, 206))
+
 }
 
 type OrthocenterAnim struct {
@@ -149,6 +105,8 @@ func (this *OrthocenterAnim) process(delta float32) {
 			}
 		}
 	}
-	if this.currState == 3 {
-	}
+}
+
+func (this *OrthocenterAnim) isFinished() bool {
+	return this.currState == 3
 }

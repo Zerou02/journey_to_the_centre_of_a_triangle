@@ -46,7 +46,7 @@ func newCornerAnim(cornerP, p1, p2 glm.Vec2, centroid glm.Vec2) IncenterCornerAn
 	var scaled = vec.Mul(1.2)
 	var newC = cornerP.Add(&scaled)
 
-	var animDur float32 = 5
+	var animDur float32 = 1
 	return IncenterCornerAnim{
 		cornerP:      cornerP,
 		dirP:         newC,
@@ -65,13 +65,13 @@ func (this *IncenterCornerAnim) process(delta float32, currState, allowedState i
 }
 
 // 0 -> nichts, 1 -> regulaer, 2-> post
-func (this *IncenterCornerAnim) draw(ctx *closedGL.ClosedGLContext, depth int) {
+func (this *IncenterCornerAnim) draw(ctx *closedGL.ClosedGLContext) {
 	var p = glm.Vec2{this.animX.GetValue(), this.animY.GetValue()}
 	var dist = distToLine(this.cornerP, this.otherCornerP, p)
-	ctx.DrawCircle(CartesianToSSPoint(p, ctx.Window.Wh), glm.Vec4{1, 0, 0, 1}, glm.Vec4{1, 0, 0, 1}, 10, 3, depth)
-	drawCartesianLine(this.cornerP, p, ctx, depth)
+	ctx.DrawCircle(CartesianToSSPoint(p, ctx.Window.Wh), glm.Vec4{0, 0.5, 0, 0}, glm.Vec4{0, 0.5, 0, 0}, 10, 3, 2)
+	drawCartesianLine(this.cornerP, p, ctx, 2, glm.Vec4{0, 0.5, 0, 1})
 	if !this.animX.IsFinished() {
-		ctx.DrawCircle(CartesianToSSPoint(p, ctx.Window.Wh), glm.Vec4{1, 0, 1, 0}, glm.Vec4{1, 0, 0, 1}, dist, 3, depth)
+		ctx.DrawCircle(CartesianToSSPoint(p, ctx.Window.Wh), glm.Vec4{0, 0.5, 0, 0}, glm.Vec4{0, 0.5, 0, 0}, dist, 3, 3)
 	}
 }
 
@@ -109,21 +109,19 @@ func (this *IncenterAnim) draw() {
 
 	for i := 0; i < len(this.cornerAnims); i++ {
 		if this.currState >= i {
-			this.cornerAnims[i].draw(this.tri.Ctx, i+3)
+			this.cornerAnims[i].draw(this.tri.Ctx)
 		}
 	}
 	if this.currState == 3 {
 		var incenter = this.tri.calcIncenter()
 
-		var eq1 = CalcLinearEquation(this.cornerAnims[0].cornerP, this.cornerAnims[0].dirP)
-		var eq2 = CalcLinearEquation(this.cornerAnims[1].cornerP, this.cornerAnims[2].cornerP)
-		var cp = CalcCrossingPoint(eq1, eq2)
-		var vec = cp.Sub(&incenter)
-		var b = incenter
-		b.AddScaledVec(this.unitAnim.GetValue(), &vec)
-		var dist = distBetweenPoints(incenter, b)
-		drawCartesianCircle(incenter, this.tri.Ctx, glm.Vec4{0, 1, 0, 1}, glm.Vec4{1, 1, 0, 1}, 6, 10, 4)
-		drawCartesianCircle(incenter, this.tri.Ctx, glm.Vec4{0, 1, 0, 0}, glm.Vec4{1, 1, 0, 1}, 7, dist, 4)
+		var p = findLineCircleIntersectionPoint(this.tri.calcIncenter(), this.tri.Points[0], this.tri.Points[1])
+		var len = incenter.Sub(&p)
+		drawCartesianCircle(incenter, this.tri.Ctx, glm.Vec4{0, 1, 0, 0}, glm.Vec4{0, 0.5, 0, 1}, 3, this.unitAnim.GetValue()*len.Len(), 3)
 
 	}
+}
+
+func (this *IncenterAnim) isFinished() bool {
+	return this.unitAnim.IsFinished()
 }

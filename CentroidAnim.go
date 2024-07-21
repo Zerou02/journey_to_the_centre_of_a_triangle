@@ -65,35 +65,32 @@ func (this *AnimSideCentroid) process(delta float32) {
 
 func (this *AnimSideCentroid) draw(ctx *closedGL.ClosedGLContext) {
 	var wh = ctx.Window.Wh
+	var cc = glm.Vec4{1, 0, 0, 1}
+	var c = glm.Vec4{1, 0, 0, 1}
 	if *this.currState == 5 {
 		this.ps[0].draw(ctx)
 		this.ps[1].draw(ctx)
 
-		var cc = glm.Vec4{1, 0, 0, 1}
-		var c = glm.Vec4{0, 0.5, 0, 1}
 		ctx.DrawLine(CartesianToSSPoint(this.ps[0].p, wh), CartesianToSSPoint(this.freePoint, wh), c, c, 1)
 		ctx.DrawLine(CartesianToSSPoint(this.ps[1].p, wh), CartesianToSSPoint(this.freePoint, wh), c, c, 1)
 
-		ctx.DrawCircle(CartesianToSSPoint(this.origP1, wh), glm.Vec4{0, 0, 0, 0}, cc, this.cAnim.GetValue(), 5, 1)
-		ctx.DrawCircle(CartesianToSSPoint(this.origP2, wh), glm.Vec4{0, 0, 0, 0}, cc, this.cAnim.GetValue(), 5, 1)
+		ctx.DrawCircle(CartesianToSSPoint(this.origP1, wh), glm.Vec4{0, 0, 0, 0}, cc, this.cAnim.GetValue(), 5, 3)
+		ctx.DrawCircle(CartesianToSSPoint(this.origP2, wh), glm.Vec4{0, 0, 0, 0}, cc, this.cAnim.GetValue(), 5, 3)
 		return
 	}
 	if *this.currState == this.allowedState {
 		this.ps[0].draw(ctx)
 		this.ps[1].draw(ctx)
 
-		var cc = glm.Vec4{1, 0, 0, 1}
-		var c = glm.Vec4{0, 0.5, 0, 1}
 		ctx.DrawLine(CartesianToSSPoint(this.ps[0].p, wh), CartesianToSSPoint(this.freePoint, wh), c, c, 1)
 		ctx.DrawLine(CartesianToSSPoint(this.ps[1].p, wh), CartesianToSSPoint(this.freePoint, wh), c, c, 1)
 
-		ctx.DrawCircle(CartesianToSSPoint(this.origP1, wh), glm.Vec4{0, 0, 0, 0}, cc, this.cAnim.GetValue(), 5, 1)
-		ctx.DrawCircle(CartesianToSSPoint(this.origP2, wh), glm.Vec4{0, 0, 0, 0}, cc, this.cAnim.GetValue(), 5, 1)
+		ctx.DrawCircle(CartesianToSSPoint(this.origP1, wh), glm.Vec4{0, 0, 0, 0}, cc, this.cAnim.GetValue(), 5, 2)
+		ctx.DrawCircle(CartesianToSSPoint(this.origP2, wh), glm.Vec4{0, 0, 0, 0}, cc, this.cAnim.GetValue(), 5, 2)
 	}
 	if *this.currState >= this.allowedState {
-		var c = glm.Vec4{0, 0.5, 0, 1}
-		ctx.DrawLine(CartesianToSSPoint(this.ps[0].p, wh), CartesianToSSPoint(this.freePoint, wh), c, c, 2)
-		ctx.DrawLine(CartesianToSSPoint(this.ps[1].p, wh), CartesianToSSPoint(this.freePoint, wh), c, c, 2)
+		ctx.DrawLine(CartesianToSSPoint(this.ps[0].p, wh), CartesianToSSPoint(this.freePoint, wh), c, c, 3)
+		ctx.DrawLine(CartesianToSSPoint(this.ps[1].p, wh), CartesianToSSPoint(this.freePoint, wh), c, c, 3)
 	}
 
 }
@@ -136,8 +133,7 @@ func (this *CentroidAnim) draw() {
 	this.sides[2].draw(this.tri.Ctx)
 	if this.currState == 3 || this.currState == 6 {
 		var lastMp = closedGL.MiddlePoint(this.tri.Points[1], this.tri.Points[2])
-		var c = this.tri.calcCentroid()
-		this.tri.Ctx.DrawCircle(CartesianToSSPoint(c, this.tri.Ctx.Window.Wh), glm.Vec4{0, 1, 0, 1}, glm.Vec4{1, 1, 0, 1}, 10, 3, 3)
+		this.tri.drawCentroid()
 		this.tri.Ctx.DrawCircle(CartesianToSSPoint(lastMp, this.tri.Ctx.Window.Wh), glm.Vec4{1, 0, 0, 1}, glm.Vec4{1, 0, 0, 1}, 10, 3, 3)
 	}
 }
@@ -146,4 +142,8 @@ func (this *CentroidAnim) process(delta float32) {
 	this.sides[0].process(delta)
 	this.sides[1].process(delta)
 	this.sides[2].process(delta)
+}
+
+func (this *CentroidAnim) isFinished() bool {
+	return this.currState == 3
 }

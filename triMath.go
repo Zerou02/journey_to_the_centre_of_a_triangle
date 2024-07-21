@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/EngoEngine/glm"
 	"github.com/EngoEngine/math"
+	"github.com/Zerou02/closedGL/closedGL"
 )
 
 func SSToCartesianPoint(vec glm.Vec2, wh float32) glm.Vec2 {
@@ -109,4 +110,53 @@ func LineCircleIntersection(r float32, eq glm.Vec2, circlePos glm.Vec2) []glm.Ve
 		retArr[i] = retArr[i].Add(&circlePos)
 	}
 	return retArr
+}
+
+func pointInRect(p glm.Vec2, rect glm.Vec4) bool {
+	return p[0] >= rect[0] && p[1] >= rect[1] && p[0] < rect[0]+rect[2] && p[1] < rect[1]+rect[3]
+}
+
+// works if and only if there is exactly one
+func findLineCircleIntersectionPoint(cp, p1, p2 glm.Vec2) glm.Vec2 {
+	var r float32 = 0
+	var step float32 = 1
+	var targetPoint = glm.Vec2{0, 0}
+
+	var oppositeSide = CalcLinearEquation(p1, p2)
+	var currOffsets = LineCircleIntersection(r, oppositeSide, cp)
+	for distToLine(p1, p2, targetPoint) > glm.Epsilon {
+		currOffsets = LineCircleIntersection(r, oppositeSide, cp)
+		var len = len(currOffsets)
+		if len == 2 {
+			if step > glm.Epsilon {
+				r -= step
+			} else {
+				r -= glm.Epsilon
+			}
+			step *= 0.1
+			targetPoint = currOffsets[0]
+			if step < glm.Epsilon {
+				break
+			}
+		}
+		if len == 0 {
+			if step < glm.Epsilon {
+				r += glm.Epsilon
+			} else {
+				var rNew = step + r
+				if rNew == r {
+					break
+				}
+				r = rNew
+			}
+		}
+		if len == 1 {
+			targetPoint = currOffsets[0]
+			break
+		}
+	}
+	if len(currOffsets) == 2 {
+		targetPoint = closedGL.MiddlePoint(currOffsets[0], currOffsets[1])
+	}
+	return targetPoint
 }

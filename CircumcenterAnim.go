@@ -47,19 +47,19 @@ func (this *CircumcenterSideAnim) process(delta float32) {
 	}
 }
 
-func (this *CircumcenterSideAnim) draw(ctx *closedGL.ClosedGLContext, depth int) {
-	var bc = glm.Vec4{1, 0, 0, 1}
+func (this *CircumcenterSideAnim) draw(ctx *closedGL.ClosedGLContext) {
+	var bc = glm.Vec4{1, 1, 0, 1}
 	if !this.animR.IsFinished() {
-		drawCartesianCircle(this.p1, ctx, glm.Vec4{0, 0, 0, 0}, bc, 3, this.animR.GetValue(), float32(depth))
-		drawCartesianCircle(this.p2, ctx, glm.Vec4{0, 0, 0, 0}, bc, 3, this.animR.GetValue(), float32(depth))
+		drawCartesianCircle(this.p1, ctx, glm.Vec4{0, 0, 0, 0}, bc, 3, this.animR.GetValue(), 2)
+		drawCartesianCircle(this.p2, ctx, glm.Vec4{0, 0, 0, 0}, bc, 3, this.animR.GetValue(), 2)
 	}
 	var vec2 = this.circumcenter.Sub(&this.basePoint)
 	var pForward = this.basePoint
 	pForward.AddScaledVec(this.animUnit.GetValue(), &vec2)
 	var pBack = this.basePoint
 	pBack.AddScaledVec(-this.animUnit.GetValue(), &vec2)
-	drawCartesianLine(this.basePoint, pForward, ctx, depth)
-	drawCartesianLine(this.basePoint, pBack, ctx, depth)
+	drawCartesianLine(this.basePoint, pForward, ctx, 2, glm.Vec4{1, 1, 0, 1})
+	drawCartesianLine(this.basePoint, pBack, ctx, 2, glm.Vec4{1, 1, 0, 1})
 
 }
 
@@ -92,22 +92,21 @@ func (this *CircumcenterAnim) setCircumcenter(circumCenter glm.Vec2) {
 	this.anims[2].setCircumcenter(circumCenter)
 
 	var vec = circumCenter.Sub(&this.tri.Points[0])
-	println(vec.Len())
 	this.animCenter = closedGL.NewAnimation(0, vec.Len(), 1, false, false)
 }
 
 func (this *CircumcenterAnim) draw() {
 	for i := 0; i < 3; i++ {
 		if this.currState >= i {
-			this.anims[i].draw(this.tri.Ctx, i+3)
+			this.anims[i].draw(this.tri.Ctx)
 			if this.anims[i].animUnit.IsFinished() {
 				this.currState = i + 1
 			}
 		}
 	}
 	if this.currState == 3 {
-		drawCartesianCircle(this.tri.calcCircumcenter(), this.tri.Ctx, glm.Vec4{1, 1, 1, 1}, glm.Vec4{1, 1, 0, 1}, 5, 10, 3)
-		drawCartesianCircle(this.tri.calcCircumcenter(), this.tri.Ctx, glm.Vec4{1, 0, 0, 0}, glm.Vec4{1, 0, 0, 1}, 5, this.animCenter.GetValue(), 3)
+		this.tri.drawCircumCenter()
+		drawCartesianCircle(this.tri.calcCircumcenter(), this.tri.Ctx, glm.Vec4{1, 0, 0, 0}, glm.Vec4{1, 1, 0, 1}, 3, this.animCenter.GetValue(), 3)
 	}
 }
 
@@ -120,4 +119,8 @@ func (this *CircumcenterAnim) process(delta float32) {
 	if this.currState == 3 {
 		this.animCenter.Process(delta)
 	}
+}
+
+func (this *CircumcenterAnim) isFinished() bool {
+	return this.animCenter.IsFinished()
 }
