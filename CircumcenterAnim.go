@@ -61,7 +61,7 @@ type CircumcenterAnim struct {
 	machine    StateMachine
 	animCenter closedGL.Animation
 	animDur    float32
-	endTimer   closedGL.Timer
+	endTimer   closedGL.Animation
 }
 
 func newCircumCenterAnim(tri *Tri, animDur float32) CircumcenterAnim {
@@ -78,7 +78,7 @@ func newCircumCenterAnim(tri *Tri, animDur float32) CircumcenterAnim {
 		animDur:    animDur,
 		animCenter: closedGL.NewAnimation(0, vec.Len(), animDur, false, false),
 		machine:    machine,
-		endTimer:   closedGL.NewTimer(0.5, false),
+		endTimer:   closedGL.NewAnimation(1, 1, 1, false, false),
 	}
 }
 
@@ -101,7 +101,7 @@ func (this *CircumcenterAnim) Process(delta float32) {
 }
 
 func (this *CircumcenterAnim) IsFinished() bool {
-	return this.endTimer.IsTick()
+	return this.endTimer.IsFinished()
 }
 
 func (this *CircumcenterAnim) init() {

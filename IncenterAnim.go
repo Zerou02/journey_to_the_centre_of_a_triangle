@@ -1,8 +1,6 @@
 package main
 
 import (
-	"math"
-
 	"github.com/EngoEngine/glm"
 	"github.com/Zerou02/closedGL/closedGL"
 )
@@ -13,32 +11,11 @@ type IncenterCornerAnim struct {
 	otherCornerP  glm.Vec2
 }
 
-func newCornerAnim(cornerP, p1, p2 glm.Vec2, centroid glm.Vec2) IncenterCornerAnim {
-	var vec1 = p1.Sub(&cornerP)
-	var vec2 = p2.Sub(&cornerP)
-	var angle = AngleTo(vec1, vec2) / 2
-	var rotated = Rotate(angle, vec2)
-	var rotated2 = Rotate(2*math.Pi-angle, vec2)
+func newCornerAnim(cornerP, p1, p2 glm.Vec2, tri *Tri, animDur float32) IncenterCornerAnim {
+	var centroid = tri.calcCentroid()
+	var bisectorVec = findAngleBisectorVec(cornerP, p1, p2, centroid)
+	var p = bisectorVec.Add(&cornerP)
 
-	var norm = rotated.Normalized()
-	var norm2 = rotated2.Normalized()
-
-	var steps = distBetweenPoints(cornerP, centroid)
-	var tenSteps = norm.Mul(steps)
-	var tenSteps2 = norm2.Mul(steps)
-
-	var newP = cornerP.Add(&tenSteps)
-	var newP2 = cornerP.Add(&tenSteps2)
-	var dist1 = distBetweenPoints(newP, centroid)
-	var dist2 = distBetweenPoints(newP2, centroid)
-
-	var p glm.Vec2
-
-	if dist1 < dist2 {
-		p = newP
-	} else {
-		p = newP2
-	}
 	var baseEq = CalcLinearEquation(cornerP, p)
 	var oppositeEq = CalcLinearEquation(p1, p2)
 	var crossing = CalcCrossingPoint(baseEq, oppositeEq)
@@ -46,7 +23,6 @@ func newCornerAnim(cornerP, p1, p2 glm.Vec2, centroid glm.Vec2) IncenterCornerAn
 	var scaled = vec.Mul(1.2)
 	var newC = cornerP.Add(&scaled)
 
-	var animDur float32 = 1
 	return IncenterCornerAnim{
 		cornerP:      cornerP,
 		dirP:         newC,
@@ -69,7 +45,7 @@ func (this *IncenterCornerAnim) draw(ctx *closedGL.ClosedGLContext) {
 	var p = glm.Vec2{this.animX.GetValue(), this.animY.GetValue()}
 	var dist = distToLine(this.cornerP, this.otherCornerP, p)
 	ctx.DrawCircle(CartesianToSSPoint(p, ctx.Window.Wh), glm.Vec4{0, 0.5, 0, 0}, glm.Vec4{0, 0.5, 0, 0}, 10, 3, 2)
-	drawCartesianLine(this.cornerP, p, ctx, 2, glm.Vec4{0, 0.5, 0, 1})
+	drawCartesianLine(this.cornerP, p, ctx, 2, glm.Vec4{0, 0.5, 0, 3})
 	if !this.animX.IsFinished() {
 		ctx.DrawCircle(CartesianToSSPoint(p, ctx.Window.Wh), glm.Vec4{0, 0.5, 0, 0}, glm.Vec4{0, 0.5, 0, 0}, dist, 3, 3)
 	}
@@ -81,10 +57,11 @@ type IncenterAnim struct {
 	cornerAnims [3]IncenterCornerAnim
 	currState   int
 	unitAnim    closedGL.Animation
+	animDur     float32
 }
 
-func newIncenterAnim(tri *Tri) IncenterAnim {
-	return IncenterAnim{tri: tri, currState: 0}
+func newIncenterAnim(tri *Tri, animDur float32) IncenterAnim {
+	return IncenterAnim{tri: tri, currState: 0, animDur: animDur}
 }
 
 func (this *IncenterAnim) Process(delta float32) {
@@ -100,9 +77,9 @@ func (this *IncenterAnim) Process(delta float32) {
 }
 func (this *IncenterAnim) init() {
 	this.centroid = this.tri.calcCentroid()
-	this.cornerAnims[0] = newCornerAnim(this.tri.Points[0], this.tri.Points[1], this.tri.Points[2], this.centroid)
-	this.cornerAnims[1] = newCornerAnim(this.tri.Points[1], this.tri.Points[0], this.tri.Points[2], this.centroid)
-	this.cornerAnims[2] = newCornerAnim(this.tri.Points[2], this.tri.Points[0], this.tri.Points[1], this.centroid)
+	this.cornerAnims[0] = newCornerAnim(this.tri.Points[0], this.tri.Points[1], this.tri.Points[2], this.tri, this.animDur)
+	this.cornerAnims[1] = newCornerAnim(this.tri.Points[1], this.tri.Points[0], this.tri.Points[2], this.tri, this.animDur)
+	this.cornerAnims[2] = newCornerAnim(this.tri.Points[2], this.tri.Points[0], this.tri.Points[1], this.tri, this.animDur)
 	this.unitAnim = closedGL.NewAnimation(0, 1, 1, false, false)
 }
 func (this *IncenterAnim) Draw() {

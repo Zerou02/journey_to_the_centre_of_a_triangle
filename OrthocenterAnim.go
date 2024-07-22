@@ -13,16 +13,16 @@ type OrthoCenterSideAnim struct {
 	rAnim        closedGL.Animation
 }
 
-func newOrthoSideCenterAnim(corner, p1, p2 glm.Vec2) OrthoCenterSideAnim {
+func newOrthoSideCenterAnim(corner, p1, p2 glm.Vec2, animDur float32) OrthoCenterSideAnim {
 	var retVal = OrthoCenterSideAnim{
 		corner:       corner,
 		oppositeSide: CalcLinearEquation(p1, p2),
-		unitAnim:     closedGL.NewAnimation(0, 1, 1, false, false),
+		unitAnim:     closedGL.NewAnimation(0, 1, animDur, false, false),
 	}
 	var p = findLineCircleIntersectionPoint(corner, p1, p2)
 	var a = p.Sub(&corner)
 	retVal.vec = a
-	retVal.rAnim = closedGL.NewAnimation(0, retVal.vec.Len(), 1, false, false)
+	retVal.rAnim = closedGL.NewAnimation(0, retVal.vec.Len(), animDur, false, false)
 	return retVal
 }
 
@@ -61,13 +61,17 @@ type OrthocenterAnim struct {
 	tri       *Tri
 	anims     [3]OrthoCenterSideAnim
 	currState int
+	animDur   float32
+	endAnim   closedGL.Animation
 }
 
-func newOrthoCenterAnim(tri *Tri) OrthocenterAnim {
+func newOrthoCenterAnim(tri *Tri, animDur float32) OrthocenterAnim {
 	return OrthocenterAnim{
 		tri:       tri,
 		anims:     [3]OrthoCenterSideAnim{},
 		currState: 0,
+		animDur:   animDur,
+		endAnim:   closedGL.NewAnimation(0, 1, 1, false, false),
 	}
 }
 
@@ -78,9 +82,9 @@ func (this *OrthocenterAnim) setOrthocenter(orthocenter glm.Vec2) {
 }
 
 func (this *OrthocenterAnim) init() {
-	this.anims[0] = newOrthoSideCenterAnim(this.tri.Points[0], this.tri.Points[1], this.tri.Points[2])
-	this.anims[1] = newOrthoSideCenterAnim(this.tri.Points[1], this.tri.Points[0], this.tri.Points[2])
-	this.anims[2] = newOrthoSideCenterAnim(this.tri.Points[2], this.tri.Points[0], this.tri.Points[1])
+	this.anims[0] = newOrthoSideCenterAnim(this.tri.Points[0], this.tri.Points[1], this.tri.Points[2], this.animDur)
+	this.anims[1] = newOrthoSideCenterAnim(this.tri.Points[1], this.tri.Points[0], this.tri.Points[2], this.animDur)
+	this.anims[2] = newOrthoSideCenterAnim(this.tri.Points[2], this.tri.Points[0], this.tri.Points[1], this.animDur)
 }
 
 func (this *OrthocenterAnim) Draw() {
@@ -105,8 +109,11 @@ func (this *OrthocenterAnim) Process(delta float32) {
 			}
 		}
 	}
+	if this.currState == 3 {
+		this.endAnim.Process(delta)
+	}
 }
 
 func (this *OrthocenterAnim) IsFinished() bool {
-	return this.currState == 3
+	return this.endAnim.IsFinished()
 }

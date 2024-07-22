@@ -63,27 +63,27 @@ func (this *Tri) IsFinished() bool {
 			break
 		}
 	}
-	return oneFinished
+	return !this.showUi && oneFinished
 }
 
-func (this *Tri) startCircumCenterAnim() {
-	var state = newCircumCenterAnim(this, 1)
+func (this *Tri) startCircumCenterAnim(animDur float32) {
+	var state = newCircumCenterAnim(this, animDur)
 	this.currAnims[1] = &state
 }
-func (this *Tri) startCentroidAnim() {
-	var state = newCentroidAnim(this)
+func (this *Tri) startCentroidAnim(animDur float32) {
+	var state = newCentroidAnim(this, animDur)
 	state.init()
 	this.currAnims[0] = &state
 }
 
-func (this *Tri) startIncenterAnim() {
-	var state = newIncenterAnim(this)
+func (this *Tri) startIncenterAnim(animDur float32) {
+	var state = newIncenterAnim(this, animDur)
 	state.init()
 	this.currAnims[2] = &state
 }
 
-func (this *Tri) startOrthocenterAnim() {
-	var state = newOrthoCenterAnim(this)
+func (this *Tri) startOrthocenterAnim(animDur float32) {
+	var state = newOrthoCenterAnim(this, animDur)
 	state.init()
 	var ortho = this.calcOrthocenter()
 	state.setOrthocenter(ortho)
@@ -93,11 +93,13 @@ func (this *Tri) startOrthocenterAnim() {
 
 func (this *Tri) Draw() {
 
+	println("--")
 	var ssPoints [3]glm.Vec2 = [3]glm.Vec2{}
 	for i, x := range this.Points {
 		ssPoints[i] = SSToCartesianPoint(x, this.Ctx.Window.Wh)
 		var cartMouse = SSToCartesianPoint(this.mousePos, this.Ctx.Window.Wh)
 		var dist = cartMouse.Sub(&this.Points[i])
+		closedGL.PrintlnVec2(ssPoints[i])
 		if dist.Len() < 10 && this.showUi {
 			drawCartesianCircle(x, this.Ctx, glm.Vec4{0, 0.25, 0, 1}, glm.Vec4{1, 1, 1, 1}, 6, 10, 3)
 		} else if this.showUi {
@@ -158,10 +160,14 @@ func (this *Tri) calcCentroid() glm.Vec2 {
 }
 
 func (this *Tri) calcIncenter() glm.Vec2 {
-	var anim = newIncenterAnim(this)
-	anim.init()
-	var eq1 = CalcLinearEquation(anim.cornerAnims[0].cornerP, anim.cornerAnims[0].dirP)
-	var eq2 = CalcLinearEquation(anim.cornerAnims[1].cornerP, anim.cornerAnims[1].dirP)
+	var v1 = findAngleBisectorVec(this.Points[0], this.Points[1], this.Points[2], this.calcCentroid())
+	var v2 = findAngleBisectorVec(this.Points[1], this.Points[0], this.Points[2], this.calcCentroid())
+	var oppositeP1 = this.Points[0].Add(&v1)
+	var oppositeP2 = this.Points[1].Add(&v2)
+
+	var eq1 = CalcLinearEquation(this.Points[0], oppositeP1)
+	var eq2 = CalcLinearEquation(this.Points[1], oppositeP2)
+
 	return CalcCrossingPoint(eq1, eq2)
 }
 
@@ -172,7 +178,7 @@ func (this *Tri) calcCircumcenter() glm.Vec2 {
 }
 
 func (this *Tri) calcOrthocenter() glm.Vec2 {
-	var anim = newOrthoCenterAnim(this)
+	var anim = newOrthoCenterAnim(this, 1)
 	anim.init()
 	var other1 = anim.anims[0].corner
 	other1.AddScaledVec(1, &anim.anims[0].vec)
@@ -216,10 +222,10 @@ func (this *Tri) mouseCB(w *glfw.Window, button glfw.MouseButton, action glfw.Ac
 			}
 		}
 		var cbs = [](func()){
-			func() { this.startCentroidAnim() },
-			func() { this.startCircumCenterAnim() },
-			func() { this.startIncenterAnim() },
-			func() { this.startOrthocenterAnim() },
+			func() { this.startCentroidAnim(1) },
+			func() { this.startCircumCenterAnim(1) },
+			func() { this.startIncenterAnim(1) },
+			func() { this.startOrthocenterAnim(1) },
 			func() { this.drawCenters = !this.drawCenters },
 		}
 		for i, x := range this.buttonVecs {

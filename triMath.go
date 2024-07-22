@@ -178,3 +178,21 @@ func LerpVec2(a, b glm.Vec2, t float32) glm.Vec2 {
 		closedGL.Lerp(a[1], b[1], t),
 	}
 }
+
+func findAngleBisectorVec(corner, p1, p2 glm.Vec2, centroid glm.Vec2) glm.Vec2 {
+	var vec1 = p1.Sub(&corner)
+	var vec2 = p2.Sub(&corner)
+	var angle = AngleTo(vec1, vec2) / 2
+	var rotated = Rotate(angle, vec2)
+	var rotatedInverse = Rotate(2*math.Pi-angle, vec2)
+
+	var newP = corner.Add(&rotated)
+	var newP2 = corner.Add(&rotatedInverse)
+	var dist1 = distBetweenPoints(newP, centroid)
+	var dist2 = distBetweenPoints(newP2, centroid)
+	if dist1 < dist2 {
+		return corner.Sub(&newP)
+	} else {
+		return corner.Sub(&newP2)
+	}
+}
