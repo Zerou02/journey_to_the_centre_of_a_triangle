@@ -93,13 +93,11 @@ func (this *Tri) startOrthocenterAnim(animDur float32) {
 
 func (this *Tri) Draw() {
 
-	println("--")
 	var ssPoints [3]glm.Vec2 = [3]glm.Vec2{}
 	for i, x := range this.Points {
 		ssPoints[i] = SSToCartesianPoint(x, this.Ctx.Window.Wh)
 		var cartMouse = SSToCartesianPoint(this.mousePos, this.Ctx.Window.Wh)
 		var dist = cartMouse.Sub(&this.Points[i])
-		closedGL.PrintlnVec2(ssPoints[i])
 		if dist.Len() < 10 && this.showUi {
 			drawCartesianCircle(x, this.Ctx, glm.Vec4{0, 0.25, 0, 1}, glm.Vec4{1, 1, 1, 1}, 6, 10, 3)
 		} else if this.showUi {
@@ -256,4 +254,12 @@ func (this *Tri) cursorCB(w *glfw.Window, xpos float64, ypos float64) {
 		}
 		this.setVertices(newPoints)
 	}
+}
+
+func (this *Tri) convertPointsToSS() [3]glm.Vec2 {
+	var retVal = [3]glm.Vec2{}
+	for i, x := range this.Points {
+		retVal[i] = CartesianToSSPoint(x, this.Ctx.Window.Wh)
+	}
+	return retVal
 }

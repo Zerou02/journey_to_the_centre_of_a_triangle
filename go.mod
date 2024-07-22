@@ -4,7 +4,7 @@ go 1.22.1
 
 require (
 	github.com/EngoEngine/glm v0.0.0-20170725114841-9c08f4d1f668
-	github.com/Zerou02/closedGL v0.1.15
+	github.com/Zerou02/closedGL v0.1.18
 )
 
 require (

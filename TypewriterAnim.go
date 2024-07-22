@@ -4,6 +4,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/EngoEngine/glm"
 	"github.com/Zerou02/closedGL/closedGL"
 )
 
@@ -11,27 +12,30 @@ type TypewriterAnim struct {
 	anim        closedGL.Animation
 	lines       []string
 	linesToDraw []string
+	ctx         *closedGL.ClosedGLContext
+	endAnim     closedGL.Animation
 }
 
-func newTypewriterAnim(path string) TypewriterAnim {
+func newTypewriterAnim(path string, ctx *closedGL.ClosedGLContext, secondsPerChars float32) TypewriterAnim {
 	var bytees, _ = os.ReadFile(path)
 	var contents = string(bytees)
 	var lines []string = []string{}
 	var amountChars = 0
-	var secondPerChars float32 = 0.05
 	for _, x := range strings.Split(contents, "\n") {
 		amountChars += len(x)
 		lines = append(lines, x)
 	}
-	var time = float32(amountChars) * secondPerChars
+	var time = float32(amountChars) * secondsPerChars
 	var anim = closedGL.NewAnimation(0, float32(amountChars), time, false, false)
 	return TypewriterAnim{
-		anim:  anim,
-		lines: lines,
+		anim:    anim,
+		lines:   lines,
+		ctx:     ctx,
+		endAnim: closedGL.NewAnimation(0, 1, 1, false, false),
 	}
 }
 
-func (this *TypewriterAnim) process(delta float32) {
+func (this *TypewriterAnim) Process(delta float32) {
 	this.anim.Process(delta)
 	var currTextLen = this.anim.GetValue()
 	this.linesToDraw = []string{}
@@ -55,11 +59,18 @@ func (this *TypewriterAnim) process(delta float32) {
 		}
 		this.linesToDraw = append(this.linesToDraw, lineToDraw)
 	}
+	if this.anim.IsFinished() {
+		this.endAnim.Process(delta)
+	}
 }
 
-func (this *TypewriterAnim) draw(ctx *closedGL.ClosedGLContext) {
+func (this *TypewriterAnim) Draw() {
+	this.ctx.ClearBG(glm.Vec4{0, 0, 0, 0})
 	for i, x := range this.linesToDraw {
-		ctx.Text.DrawText(0, 100+i*50, x, 1)
+		this.ctx.Text.DrawText(0, 100+i*50, x, 1)
 	}
+}
 
+func (this *TypewriterAnim) IsFinished() bool {
+	return this.endAnim.IsFinished()
 }
